@@ -3,6 +3,15 @@
 # Ansible tasks for the consul role
 #
 
+- name: Create Consul UI directory
+  file:
+    state: directory
+    path: "{{ item }}"
+    owner: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+  with_items:
+    - "{{ consul_home }}/ui"
+
 - name: Download Consul UI
   get_url:
     url: "{{ consul_ui_download }}"
@@ -29,22 +38,10 @@
 - name: Consul UI nginx config
   template:
     src: consul-ui.conf.j2
-    dest: /etc/nginx/sites-available/consul
+    dest: /etc/nginx/conf.d/consul.conf
     owner: root
     group: root
     mode: 0755
   when: consul_install_ui
   notify:
     - Restart nginx
-
-- name: Link Consul UI nginx config
-  file:
-    state: link
-    src: /etc/nginx/sites-available/consul
-    path: /etc/nginx/sites-enabled/consul
-    owner: root
-    group: root
-    mode: 0755
-  when: consul_install_ui
-  notify:
-  - Restart nginx
