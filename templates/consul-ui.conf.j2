@@ -1,0 +1,31 @@
+#
+# Nginx configuration for consul-ui
+# https://github.com/h5bp/server-configs-nginx
+# {{ ansible_managed }}
+#
+
+server {
+    listen [::]:{{ consul_ui_port }};
+    listen {{ consul_ui_port }};
+    {%- if consul_ui_port_ssl is defined -%}
+    listen [::]:{{ consul_ui_port_ssl }};
+    listen {{ consul_ui_port_ssl }};
+    {% endif %}
+
+    server_name {{ consul_ui_server_name }};
+    root {{ consul_ui_dir }};
+
+    # include rules/gzip.conf;
+    # include rules/security.conf;
+
+    location / {
+        proxy_pass http://127.0.0.1:8500;
+        {%- if consul_ui_require_auth -%}
+        auth_basic "Restricted";
+        auth_basic_user_file {{ consul_ui_auth_user_file }};
+        {% endif %}
+    }
+
+    error_log /var/log/nginx/error-consul.log;
+    access_log /var/log/nginx/access-consul.log;
+}

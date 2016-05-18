@@ -1,0 +1,50 @@
+---
+#
+# Ansible tasks for the consul role
+#
+
+- name: Download Consul UI
+  get_url:
+    url: "{{ consul_ui_download }}"
+    dest: "{{ consul_download_folder }}"
+    checksum: "{{ consul_ui_checksum }}"
+  register: consul_ui_was_downloaded
+
+- name: Copy and unpack Consul UI
+  unarchive:
+    src: "{{ consul_download_folder }}/{{ consul_ui_archive }}"
+    dest: "{{ consul_ui_dir }}"
+    copy: no
+  when: consul_ui_was_downloaded|changed
+
+- name: Ensure Consul UI directory is configured
+  file:
+    state: directory
+    path: "{{ consul_ui_dir }}"
+    owner: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+    recurse: yes
+  when: consul_ui_was_downloaded|changed
+
+- name: Consul UI nginx config
+  template:
+    src: consul-ui.conf.j2
+    dest: /etc/nginx/sites-available/consul
+    owner: root
+    group: root
+    mode: 0755
+  when: consul_install_ui
+  notify:
+    - Restart nginx
+
+- name: Link Consul UI nginx config
+  file:
+    state: link
+    src: /etc/nginx/sites-available/consul
+    path: /etc/nginx/sites-enabled/consul
+    owner: root
+    group: root
+    mode: 0755
+  when: consul_install_ui
+  notify:
+  - Restart nginx

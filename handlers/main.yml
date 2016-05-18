@@ -1,0 +1,33 @@
+#
+# Handlers for consul
+#
+# @see http://docs.ansible.com/playbooks_intro.html#handlers-running-operations-on-change
+#
+# Notes:
+#  "Notify handlers are always run in the order written."
+#
+---
+
+- name: Reload consul
+  become: yes
+  command: pkill -1 consul
+
+- name: Restart consul
+  supervisorctl:
+    name: "{{ item }}"
+    state: restarted
+  with_items:
+    - "consul"
+
+- name: Restart nginx
+  service:
+    name: nginx
+    state: restarted
+  become: yes
+
+- name: Restart dnsmasq
+  service:
+    name: dnsmasq
+    state: restarted
+    enabled: yes
+  become: yes

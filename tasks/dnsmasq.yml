@@ -1,0 +1,73 @@
+---
+#
+# Ansible tasks for the consul role
+#
+# Notes:
+#   - dhclient.conf (and similar) checks probably won't work on
+#     RedHat family systems 7 and newer.
+
+- name: Ensure dependencies are installed
+  yum:
+    name: "{{ item }}"
+    state: installed
+  with_items:
+    - dnsmasq
+
+- name: Configure dnsmasq to listen only on loopback
+  lineinfile:
+    dest: /etc/dnsmasq.conf
+    regexp: "^#?interface="
+    line: "interface=lo"
+    state: present
+
+- name: Configure dnsmasq to disable DHCP and TFTP
+  lineinfile:
+    dest: /etc/dnsmasq.conf
+    regexp: "^#?no-dhcp-interface="
+    line: "no-dhcp-interface=lo"
+    state: present
+
+- name: Configure dnsmasq to use a config directory
+  lineinfile:
+    dest: /etc/dnsmasq.conf
+    regexp: "^#?conf-dir="
+    line: "conf-dir=/etc/dnsmasq.d"
+    state: present
+
+- name: Add localhost nameserver to resolv.conf
+  lineinfile:
+    dest: /etc/resolv.conf
+    line: 'nameserver 127.0.0.1'
+    insertbefore: "^nameserver"
+    state: present
+
+- name: Detect dhclient.conf
+  stat:
+    path: /etc/dhcp/dhclient.conf
+  register: dh
+
+- name: Ensure dhclient maintains the localhost nameserver
+  lineinfile:
+    dest: /etc/dhcp/dhclient.conf
+    line: 'prepend domain-name-servers 127.0.0.1;'
+    state: present
+  when: dh.stat.exists
+
+- name: Detect dhclient-eth0.conf
+  stat:
+    path: /etc/dhcp/dhclient-eth0.conf
+  register: dh0
+
+- name: Ensure dhclient maintains the localhost nameserver (eth0)
+  lineinfile:
+    dest: /etc/dhcp/dhclient-eth0.conf
+    line: 'prepend domain-name-servers 127.0.0.1;'
+    state: present
+  when: dh0.stat.exists
+
+- name: Delegate consul DNS requests to the consul DNS port
+  copy:
+    content: 'server=/{{ consul_domain }}/{{ consul_client_address }}#{{ consul_port_dns }}'
+    dest: /etc/dnsmasq.d/10-consul
+  notify:
+    - Restart dnsmasq

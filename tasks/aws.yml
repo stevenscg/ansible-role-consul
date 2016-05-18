@@ -1,0 +1,32 @@
+---
+#
+# Ansible tasks for the consul role
+#
+
+# Possible issue with run_once:
+# https://github.com/ansible/ansible/issues/13267
+
+# Note: This is only run once (on the first host in inventory)
+- name: Gather consul server instances
+  run_once: true
+  shell: >
+    aws ec2 describe-instances
+    --region {{ region }}
+    --filters "Name=instance-state-code,Values=16" "Name=tag:env,Values={{ env }}" "Name=tag:class,Values={{ consul_servers_via_tag }}"
+    --query "Reservations[].Instances[].PrivateIpAddress"
+    --output json
+  register: consul_instances_raw
+  changed_when: false
+  when: consul_servers_via_tag is defined
+
+- name: Register consul server addresses
+  set_fact:
+    consul_servers: "{{ consul_instances_raw.stdout | from_json }}"
+  when: consul_servers_via_tag is defined and consul_instances_raw is defined
+  changed_when: false
+  failed_when: consul_instances_raw.stdout == ''
+
+- name: Ensure that consul servers were found
+  fail:
+    msg: No consul servers found
+  when: consul_servers_via_tag is defined and consul_servers|length == 0

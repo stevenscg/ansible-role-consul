@@ -1,0 +1,23 @@
+---
+#
+# Ansible tasks for the consul role
+#
+
+- include: aws.yml
+  when: consul_servers_via_tag is defined
+
+- include: consul.yml
+
+- include: consul-ui.yml
+  when: consul_install_ui == true
+
+- include: dnsmasq.yml
+  when: consul_install_dnsmasq == true
+
+- include: consulkv.yml
+  when: consul_install_consulkv == true
+
+# consul_acl_enabled is cast to boolean here since it is commonly
+# passed via extra vars during cluster bootstrapping.
+- include: consul-acl.yml
+  when: ( consul_acl_enabled | default(true) | bool ) and consul_acl_rules is defined

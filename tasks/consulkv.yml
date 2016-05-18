@@ -1,0 +1,12 @@
+---
+#
+# Ansible tasks for the consul role
+#
+
+- name: Install consulkv script
+  template:
+    src: consulkv.j2
+    dest: "{{ consul_home }}/bin/consulkv"
+    owner: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+    mode: 0755
