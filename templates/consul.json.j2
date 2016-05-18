@@ -1,6 +1,6 @@
 {
-{% if consul_install_ui == true %}
-  "ui_dir": "{{ consul_home }}/dist",
+{% if consul_install_ui is defined and consul_install_ui %}
+  "ui_dir": "{{ consul_ui_dir }}",
 {% endif %}
 {% if consul_use_start_join is defined and consul_use_start_join and consul_servers %}
   "start_join": {{ consul_servers|to_nice_json }},
