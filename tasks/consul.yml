@@ -27,15 +27,9 @@
     name: "{{ item }}"
     state: latest
   with_items:
+    - pip
     - pyhcl
     - python-consul
-
-- name: Download consul
-  get_url:
-    url: "{{ consul_download }}"
-    dest: "{{ consul_download_folder }}"
-    checksum: "{{ consul_checksum }}"
-  register: consul_was_downloaded
 
 - name: Create consul group
   group:
@@ -61,6 +55,13 @@
     - "{{ consul_data_dir }}"
     - "{{ consul_config_dir }}"
 
+- name: Download consul
+  get_url:
+    url: "{{ consul_download }}"
+    dest: "{{ consul_download_folder }}"
+    checksum: "{{ consul_checksum }}"
+  register: consul_was_downloaded
+
 - name: Copy and unpack
   unarchive:
     src: "{{ consul_download_folder }}/{{ consul_archive }}"
@@ -69,6 +70,7 @@
   when: consul_was_downloaded|changed
   notify:
     - Restart consul
+    - Restart consul via supervisor
 
 - name: Create TLS key
   no_log: true
@@ -109,13 +111,13 @@
     recurse: yes
   when: consul_was_downloaded|changed
 
-- name: Add consul to path
+- name: Set consul environment variables
   template:
-    src: consul.sh.j2
+    src: consul.env.j2
     dest: /etc/profile.d/consul.sh
     owner: root
     group: root
-    mode: 0755
+    mode: 0644
 
 - name: Install consul config
   template:
@@ -127,14 +129,20 @@
   notify:
     - Restart consul
 
-- name: Install the supervisor config
+- name: Create consul systemd service
   template:
-    src:  supervisor.conf.j2
-    dest: /etc/supervisor/conf.d/consul.conf
-  notify:
-    - Restart consul
+    src: systemd.service.j2
+    dest: /etc/systemd/system/consul.service
+    owner: root
+    group: root
+    mode: 0644
+  register: consul_systemd_service
 
-- name: Ensure the app is configured with supervisor
-  supervisorctl:
+- name: Ensure consul is started and enabled at boot
+  systemd:
     name: consul
-    state: present
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  when: >
+    consul_systemd_service|changed

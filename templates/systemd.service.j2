@@ -1,0 +1,35 @@
+#
+# Systemd configuration for consul
+# {{ ansible_managed }}
+#
+# Notes:
+#   KillSignal=SIGINT is used to gracefully leave the cluster.
+#   https://www.consul.io/docs/agent/basics.html
+#   Based on https://github.com/mterron/init-scripts/blob/master/consul.service
+#
+
+[Unit]
+Description=Consul
+Documentation=https://www.consul.io/docs/
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+User={{ consul_user }}
+Group={{ consul_group }}
+PrivateDevices=yes
+PrivateTmp=yes
+ProtectSystem=full
+ProtectHome=read-only
+CapabilityBoundingSet=CAP_SYSLOG CAP_IPC_LOCK CAP_NET_BIND_SERVICE CAP_NET_BROADCAST
+NoNewPrivileges=yes
+ExecStart={{ consul_home }}/bin/consul agent -config-file={{ consul_config_file }} -config-dir={{ consul_config_dir }}
+ExecReload=/bin/kill -HUP $MAINPID
+KillSignal=SIGINT
+TimeoutStopSec=60s
+Restart=on-failure
+StartLimitInterval=60s
+StartLimitBurst=3
+
+[Install]
+WantedBy=multi-user.target

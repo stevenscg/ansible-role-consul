@@ -13,17 +13,9 @@
   command: pkill -1 consul
 
 - name: Restart consul
-  supervisorctl:
-    name: "{{ item }}"
-    state: restarted
-  with_items:
-    - "consul"
-
-- name: Restart nginx
   service:
-    name: nginx
+    name: consul
     state: restarted
-  become: yes
 
 - name: Restart dnsmasq
   service:

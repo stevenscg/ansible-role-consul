@@ -3,14 +3,17 @@
 # Ansible tasks for the consul role
 #
 
-# Note: This is only run once (on the first host in inventory)
 - name: Ensure standard consul ACLs are present
   run_once: true
   no_log: true
-  consul_acl:
-    mgmt_token: "{{ consul_acl_master_token | default(omit) }}"
-    name: "{{ item.name }}"
-    # type: "{{ item.type | default(omit) }}"
-    token: "{{ item.token | default(omit) }}"
-    rules: "{{ item.rules }}"
-  with_items: "{{ consul_acl_rules }}"
+  uri:
+    url: "{{ consul_base_url }}/v1/acl/update"
+    method: PUT
+    status_code: 200
+    validate_certs: "{{ consul_api_validate_certs | default(false) }}"
+    headers:
+      X-Consul-Token: "{{ consul_acl_master_token | default(omit) }}"
+    body: "{{ item.payload }}"
+    body_format: json
+  register: acl_debug
+  with_items: "{{ consul_acl_rules | default([]) }}"

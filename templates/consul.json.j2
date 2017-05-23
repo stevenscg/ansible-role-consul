@@ -3,13 +3,19 @@
   "ui_dir": "{{ consul_ui_dir }}",
 {% endif %}
 {% if consul_use_start_join is defined and consul_use_start_join and consul_servers %}
-  "start_join": {{ consul_servers|to_nice_json }},
+  "start_join": {{ consul_servers | to_nice_json }},
 {% endif %}
 {% if consul_use_retry_join is defined and consul_use_retry_join and consul_servers %}
-  "retry_join": {{ consul_servers|to_nice_json }},
+  "retry_join": {{ consul_servers | to_nice_json }},
+{% endif %}
+{% if consul_use_retry_join_ec2 is defined %}
+  "retry_join_ec2": {
+    "tag_key": "{{ consul_servers_via_tag_key }}",
+    "tag_value": "{{ consul_servers_via_tag_value }}"
+  },
 {% endif %}
 {% if consul_disable_remote_exec is defined and consul_disable_remote_exec %}
-  "disable_remote_exec": {{ "true" if consul_disable_remote_exec else "false" }},
+  "disable_remote_exec": {{ consul_disable_remote_exec | bool | to_json }},
 {% endif %}
   "domain": "{{ consul_domain }}",
   "data_dir": "{{ consul_data_dir }}",
@@ -20,23 +26,20 @@
 {% if consul_node_name is defined %}
   "node_name": "{{ consul_node_name }}",
 {% endif %}
-  "server": {{ "true" if consul_is_server else "false" }},
-{% if consul_client_address_bind and consul_client_address is defined and consul_client_address is not none %}
+  "server": {{ consul_is_server | bool | to_json }},
   "client_addr": "{{ consul_client_address }}",
-  "addresses" : {
-    "rpc": "127.0.0.1"
-  },
-{% endif %}
-  "client_addr": "{{ consul_client_address }}",
-{% if consul_dynamic_bind == false and consul_bind_address is defined and consul_bind_address is not none %}
   "bind_addr": "{{ consul_bind_address }}",
-{% endif %}
+  "addresses" : {
+    "dns": "{{ consul_addresses_dns }}",
+    "http": "{{ consul_addresses_http }}",
+    "https": "{{ consul_addresses_https }}"
+  },
 {% if consul_advertise_address is defined %}
   "advertise_addr": "{{ consul_advertise_address }}",
 {% endif %}
   "datacenter": "{{ consul_datacenter }}",
 {% if consul_is_server and consul_bootstrap is defined %}
-  "bootstrap": {{ "true" if consul_bootstrap else "false" }},
+  "bootstrap": {{ consul_bootstrap | bool | to_json }},
 {% endif %}
 {% if consul_is_server and consul_bootstrap_expect is defined %}
   "bootstrap_expect": {{ consul_bootstrap_expect }},
@@ -45,7 +48,7 @@
   "encrypt": "{{ consul_encrypt_key }}",
 {% endif %}
 {% if consul_watches is defined %}
-  "watches": {{ consul_watches|to_nice_json }},
+  "watches": {{ consul_watches | to_nice_json }},
 {% endif %}
 {% if consul_is_server and consul_cert_file is defined and consul_key_file is defined and consul_ca_file is defined %}
   "cert_file": "{{ consul_cert_file }}",
@@ -64,17 +67,15 @@
     "dns": {{ consul_port_dns }},
     "http": {{ consul_port_http }},
     "https": {{ consul_port_https }},
-    "rpc": {{ consul_port_rpc }},
     "serf_lan": {{ consul_port_serf_lan }},
     "serf_wan": {{ consul_port_serf_wan }},
     "server": {{ consul_port_server }}
   },
-{% if consul_atlas_infrastructure is defined and consul_atlas_infrastructure %}
-  "atlas_infrastructure": "{{ consul_atlas_infrastructure }}",
-  "atlas_token": "{{ consul_atlas_token }}",
-  {% if consul_atlas_join is defined %}
-  "atlas_join": true,
-  {% endif %}
+{% if consul_is_server and consul_raft_protocol is defined %}
+  "raft_protocol": {{ consul_raft_protocol }},
+{% endif %}
+{% if consul_acl_enforce_version_8 is defined %}
+  "acl_enforce_version_8": {{ consul_acl_enforce_version_8 | bool | to_json }},
 {% endif %}
 {% if consul_acl_datacenter is defined %}
   "acl_datacenter": "{{ consul_acl_datacenter }}",
@@ -94,8 +95,8 @@
 {% if consul_acl_ttl is defined %}
   "acl_ttl": "{{ consul_acl_ttl }}",
 {% endif %}
-{% if consul_atlas_acl_token is defined %}
-  "atlas_acl_token": "{{ consul_atlas_acl_token }}",
+{% if consul_acl_replication_token is defined %}
+  "acl_replication_token": "{{ consul_acl_replication_token }}",
 {% endif %}
 {% if consul_statsd_address is defined %}
   "statsd_addr": "{{ consul_statsd_address }}",
@@ -112,6 +113,19 @@
 {% if consul_dns_recursors is defined and consul_dns_recursors %}
   "recursors": {{ consul_dns_recursors|to_nice_json }},
 {% endif %}
-  "rejoin_after_leave": {{ "true" if consul_rejoin_after_leave else "false" }},
-  "leave_on_terminate": {{ "true" if consul_leave_on_terminate else "false" }}
+{% if consul_rejoin_after_leave is defined %}
+  "rejoin_after_leave": {{ consul_rejoin_after_leave | bool | to_json }},
+{% endif %}
+{% if consul_leave_on_terminate is defined %}
+  "leave_on_terminate": {{ consul_leave_on_terminate | bool | to_json }},
+{% endif %}
+{% if consul_skip_leave_on_interrupt is defined %}
+  "skip_leave_on_interrupt": {{ consul_skip_leave_on_interrupt | bool | to_json }},
+{% endif %}
+{% if consul_translate_wan_addrs is defined %}
+  "translate_wan_addrs": {{ consul_translate_wan_addrs | bool | to_json }},
+{% endif %}
+  "performance": {
+    "raft_multiplier": {{ consul_raft_multiplier }}
+  }
 }

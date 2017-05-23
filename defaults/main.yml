@@ -1,13 +1,14 @@
+---
 #
 # Default Role Variables for consul
 #
 # @see http://docs.ansible.com/playbooks_roles.html#roles
 #
 
-consul_version: 0.6.4
+consul_version: 0.8.3
 consul_archive: "consul_{{ consul_version }}_linux_amd64.zip"
 consul_download: "https://releases.hashicorp.com/consul/{{ consul_version }}/{{ consul_archive }}"
-consul_checksum: sha256:abdf0e1856292468e2c9971420d73b805e93888e006c76324ae39416edcf0627
+consul_checksum: sha256:f894383eee730fcb2c5936748cc019d83b220321efd0e790dae9a3266f5d443a
 consul_download_folder: /tmp
 
 consul_home: /opt/consul
@@ -20,36 +21,42 @@ consul_binary: consul
 
 consul_user: consul
 consul_group: consul
-consul_use_systemd: false
-consul_use_upstart: false
-
-consul_is_server: false
 
 consul_domain: consul.
+
+consul_is_server: false
 
 consul_servers: ['127.0.0.1']
 consul_log_level: "INFO"
 consul_syslog: true
-consul_rejoin_after_leave: true
-consul_leave_on_terminate: false
-consul_bind_address: "0.0.0.0"
-consul_dynamic_bind: false
-consul_client_address: "127.0.0.1"
-consul_client_address_bind: false
 consul_datacenter: "default"
 consul_disable_remote_exec: true
 
 consul_port_dns: 8600
 consul_port_http: 8500
 consul_port_https: -1
-consul_port_rpc: 8400
 consul_port_serf_lan: 8301
 consul_port_serf_wan: 8302
 consul_port_server: 8300
 
+consul_bind_address: "0.0.0.0"
+consul_client_address: "127.0.0.1"
+
+# Performance: default
+# https://www.consul.io/docs/guides/performance.html
+consul_raft_multiplier: 5
+
+consul_addresses_dns:   "{{ consul_client_address }}"
+consul_addresses_http:  "{{ consul_client_address }}"
+consul_addresses_https: "{{ consul_client_address }}"
+
+# API - the https url should be used whenever TLS is enabled
+# consul_base_url: "https://{{ consul_addresses_https }}:{{ consul_port_https }}"
+consul_base_url: "http://{{ consul_addresses_http }}:{{ consul_port_http }}"
+
 consul_ui_archive: "consul_{{ consul_version }}_web_ui.zip"
 consul_ui_download: "https://releases.hashicorp.com/consul/{{ consul_version }}/{{ consul_ui_archive }}"
-consul_ui_checksum: sha256:5f8841b51e0e3e2eb1f1dc66a47310ae42b0448e77df14c83bb49e0e0d5fa4b7
+consul_ui_checksum: sha256:9212c44c3ee4acaeca88d794225a2858a558be531a3cd44c741990c4493d6f12
 consul_ui_dir: "{{ consul_home }}/ui"
 consul_ui_port: 8000
 consul_ui_server_name: "_"
@@ -58,4 +65,3 @@ consul_ui_auth_user_file: /etc/htpasswd/consul
 
 consul_install_ui: false
 consul_install_dnsmasq: false
-consul_install_consulkv: false
