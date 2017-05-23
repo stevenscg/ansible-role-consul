@@ -13,19 +13,26 @@
   with_items:
     - dnsmasq
 
-- name: Configure dnsmasq to listen only on loopback
+# The 169.254.1.1 address (dummy0 interface) is key to getting containers access to dnsmasq.
+- name: Configure dnsmasq listen addresses
   lineinfile:
     dest: /etc/dnsmasq.conf
-    regexp: "^#?interface="
-    line: "interface=lo"
+    line: "listen-address={{ item }}"
     state: present
+  with_items:
+    - 169.254.1.1
+    - 127.0.0.1
+    - ::1
+  notify:
+    - Restart dnsmasq
 
-- name: Configure dnsmasq to disable DHCP and TFTP
+- name: Configure dnsmasq cache-size
   lineinfile:
     dest: /etc/dnsmasq.conf
-    regexp: "^#?no-dhcp-interface="
-    line: "no-dhcp-interface=lo"
+    line: "cache-size=1000"
     state: present
+  notify:
+    - Restart dnsmasq
 
 - name: Configure dnsmasq to use a config directory
   lineinfile:
@@ -33,41 +40,51 @@
     regexp: "^#?conf-dir="
     line: "conf-dir=/etc/dnsmasq.d"
     state: present
+  notify:
+    - Restart dnsmasq
 
+# WARNING: DNS issues observed when using 0.0.0.0 for consul_addresses_dns.
 - name: Add localhost nameserver to resolv.conf
   lineinfile:
     dest: /etc/resolv.conf
-    line: 'nameserver 127.0.0.1'
+    line: 'nameserver {{ consul_addresses_dns }}'
     insertbefore: "^nameserver"
     state: present
 
-- name: Detect dhclient.conf
-  stat:
-    path: /etc/dhcp/dhclient.conf
-  register: dh
-
+# dhclient.conf is created if it does not exist and should work
+# for CentOS7 distributions
 - name: Ensure dhclient maintains the localhost nameserver
   lineinfile:
     dest: /etc/dhcp/dhclient.conf
-    line: 'prepend domain-name-servers 127.0.0.1;'
+    line: 'prepend domain-name-servers {{ consul_addresses_dns }};'
     state: present
-  when: dh.stat.exists
+    create: yes
 
+# @TODO See if this is still used (July 2016)
 - name: Detect dhclient-eth0.conf
   stat:
     path: /etc/dhcp/dhclient-eth0.conf
   register: dh0
 
+# @TODO See if this is still used (July 2016)
 - name: Ensure dhclient maintains the localhost nameserver (eth0)
   lineinfile:
     dest: /etc/dhcp/dhclient-eth0.conf
-    line: 'prepend domain-name-servers 127.0.0.1;'
+    line: 'prepend domain-name-servers {{ consul_addresses_dns }};'
     state: present
   when: dh0.stat.exists
 
 - name: Delegate consul DNS requests to the consul DNS port
   copy:
-    content: 'server=/{{ consul_domain }}/{{ consul_client_address }}#{{ consul_port_dns }}'
     dest: /etc/dnsmasq.d/10-consul
+    content: |
+      server=/{{ consul_domain }}/{{ consul_addresses_dns }}#{{ consul_port_dns }}
   notify:
     - Restart dnsmasq
+
+- name: Ensure dnsmasq is started and enabled
+  service:
+    name: dnsmasq
+    enabled: yes
+    state: started
+  become: yes

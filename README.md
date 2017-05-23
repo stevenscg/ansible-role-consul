@@ -31,7 +31,6 @@ consul_dns_recursors:
   # - 169.254.169.253
   - 10.101.0.2
 consul_dns_config:
-  allow_stale: true
   max_stale: 2s
   service_ttl:
     "*": 0s
@@ -88,7 +87,7 @@ ansible-playbook consul-servers.yml -e consul_bootstrap_expect=1 -e consul_acl_e
 #### AWS
 
 ```yml
-# This uses the EC2 instance tag "consul" to identify the consul servers
+# This uses the EC2 instance tag "class=consul" to identify the consul servers
 # during bootstrapping.
 - hosts: consul-servers
   vars_files:
@@ -103,8 +102,9 @@ ansible-playbook consul-servers.yml -e consul_bootstrap_expect=1 -e consul_acl_e
       consul_bind_address: "{{ ansible_default_ipv4['address'] }}"
       consul_statsd_address: "127.0.0.1:8125"
       consul_install_dnsmasq: true
-      consul_use_retry_join: true
-      consul_servers_via_tag: consul
+      consul_use_retry_join_ec2: true
+      consul_servers_via_tag_key: class
+      consul_servers_via_tag_value: consul
       consul_acl_token: "{{ consul_acl_token_agent_mgmt | default(omit) }}"
       tags: consul
 ```
@@ -140,7 +140,7 @@ ansible-playbook web-servers.yml
 #### AWS
 
 ```yml
-# This uses the EC2 instance tag "consul" to identify the consul servers
+# This uses the EC2 instance tag "class=consul" to identify the consul servers
 # during bootstrapping.
 - hosts: web-servers
   vars_files:
@@ -154,8 +154,9 @@ ansible-playbook web-servers.yml
       consul_bind_address: "{{ ansible_default_ipv4['address'] }}"
       consul_statsd_address: "127.0.0.1:8125"
       consul_install_dnsmasq: true
-      consul_use_retry_join: true
-      consul_servers_via_tag: consul
+      consul_use_retry_join_ec2: true
+      consul_servers_via_tag_key: class
+      consul_servers_via_tag_value: consul
       consul_acl_token: "{{ consul_acl_token_agent_mgmt | default(omit) }}"
       tags: consul
 ```
@@ -165,7 +166,7 @@ ansible-playbook web-servers.yml
 
 ###### Required:
 
-Supervisor - https://github.com/stevenscg/ansible-role-supervisor
+None.
 
 ###### Recommended:
 
