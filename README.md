@@ -166,7 +166,7 @@ ansible-playbook web-servers.yml
 
 ###### Required:
 
-Supervisor - https://github.com/stevenscg/ansible-role-supervisor
+None.
 
 ###### Recommended:
 

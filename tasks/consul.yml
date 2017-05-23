@@ -70,7 +70,6 @@
   when: consul_was_downloaded|changed
   notify:
     - Restart consul
-    - Restart consul via supervisor
 
 - name: Create TLS key
   no_log: true
